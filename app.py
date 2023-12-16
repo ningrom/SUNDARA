@@ -1,5 +1,3 @@
-pip install python-docx pywin32 #instal dulu
-
 from flask import Flask, request, jsonify
 import win32com.client
 
