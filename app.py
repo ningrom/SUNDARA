@@ -1,42 +1,32 @@
 #instal dulu pip install -r requirements.txt
 
-from flask import Flask, request, jsonify
 import win32com.client
 
-app = Flask(__name__)
+def get_next_word(current_word):
+    # Buka dokumen Word yang ada
+    word = win32com.client.Dispatch('Word.Application')
+    word.Visible = 0
 
-@app.route('/')
-def home():
-    return 'Hello, world!'
+    doc = word.Documents.Open('Dokumen.docx') # Ganti 'Dokumen.docx' dengan nama file dokumen Word yang ingin Anda buka
 
-@app.route('/next-sentence', methods=['POST'])
-def next_sentence():
-    word_doc = request.form['word_doc']
-    current_sentence = request.form['current_sentence']
+    # Cari kata yang sedang dicari di dokumen
+    cursor = doc.Range().Find()
+    cursor.Text = current_word
 
-    try:
-        word = win32com.client.Dispatch("Word.Application")
-        word.Visible = 0
-        word.Documents.Open(word_doc)
+    # Cari kata berikutnya di dokumen
+    cursor.Execute()
+    cursor.Move(2) # 2 = wdCharacter
 
-        selection = word.Selection
-        selection.HomeKey(Unit=1)
+    # Ambil kata berikutnya
+    next_word = cursor.Text
 
-        search_query = current_sentence.strip() + '.'
-        found = selection.Find.Execute(search_query)
+    # Tutup dokumen Word dan Word Itself
+    doc.Close()
+    word.Quit()
 
-        if found:
-            selection.MoveDown(Unit=1, Count=1)
-            next_sentence = selection.Text.strip()
+    return next_word
 
-            if not next_sentence:
-                next_sentence = "No more sentences."
-
-            return jsonify({"success": True, "next_sentence": next_sentence})
-        else:
-            return jsonify({"success": False, "error": "Current sentence not found."})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    current_word = input("Masukkan kata yang ingin dicari: ")
+    next_word = get_next_word(current_word)
+    print(f"Kata berikutnya adalah: {next_word}")
